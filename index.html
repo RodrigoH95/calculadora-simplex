@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>Simplex</title>
+</head>
+<body>
+  <header>
+    <h1>Programación lineal. Método Simplex</h1>
+  </header>
+  <main>
+    <form action="">
+      <h2>Describa que representa cada variable:</h2>
+      <div class="form-group">
+        <label for="x1">Variable x<sub>1</sub>:</label>
+        <input class="input value" type="text" name="x1" id="x1" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="x2">Variable x<sub>2</sub>:</label>
+        <input class="input value" type="text" name="x2" id="x2" autocomplete="off">
+      </div>
+      <h2>Objetivo:</h2>
+      <label for="objetivo">Max Z = </label>
+      <input class="input value" type="text" name="valueX1" class="value" id="valueX1" value="1" autocomplete="off">
+      <span>x<sub>1</sub> + </span>
+      <input class="input value" type="text" name="valueX2" class="value" id="valueX2" value="1" autocomplete="off">
+      <span>x<sub>2</sub></span>
+      <h2>Limitaciones: <button id="btnAgregarLimit" class="btn">+</button> <button id="btnEliminarLimit" class="btn">-</button></h2>
+      <div id="limitaciones"></div>
+      <button id="btnCalcular" class="btn">Calcular</button>
+    </form>
+    <div id="resultado-contenedor">
+      <h2>Resultado:</h2>
+      <div id="resultado"></div>
+    </div>
+    
+    </div>
+  </main>
+  <script src="DOM.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

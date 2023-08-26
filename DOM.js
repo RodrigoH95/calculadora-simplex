@@ -1,5 +1,6 @@
 class ManipuladorDOM {
   constructor() {
+    this.objetivo = document.getElementById("objetivo");
     this.limitacionesContainer = document.getElementById("limitaciones");
     this.btnAgregarLimit = document.getElementById("btnAgregarLimit");
     this.btnEliminarLimit = document.getElementById("btnEliminarLimit");
@@ -45,11 +46,11 @@ class ManipuladorDOM {
   crearSelectorComparadores() {
     const select = document.createElement("select");
     select.classList.add("btn");
-    const le = this.crearOpcion("le", "≤"); // less equal
-    const eq = this.crearOpcion("eq", "="); // equal
-    const ge = this.crearOpcion("ge", "≥"); // greater equal
+    const le = this.crearOpcion("-1", "≤"); // less equal
+    const eq = this.crearOpcion("0", "="); // equal
+    const ge = this.crearOpcion("1", "≥"); // greater equal
     select.append(le, eq, ge);
-    select.onchange = (e) => console.log(e.target.value);
+    // select.onchange = (e) => console.log(e.target.value);
     return select;
   }
 
@@ -93,7 +94,7 @@ class ManipuladorDOM {
       tr.appendChild(baseCell);
       for (const value of matrix[i]) {
         const td = document.createElement("td");
-        td.textContent = this.redondearNum(value);
+        td.textContent = Utils.redondearNum(value);
         tr.appendChild(td);
       }
       table.appendChild(tr);
@@ -106,7 +107,7 @@ class ManipuladorDOM {
     const nombreX1 = this.nombreX1.value || "";
     const nombreX2 = this.nombreX2.value || "";
     const para = document.createElement("p");
-    const text = `Con ${this.redondearNum(x1)} ${nombreX1} y ${this.redondearNum(x2)} ${nombreX2} se obtuvo un Z de ${this.redondearNum(Z)}`;
+    const text = `Con ${Utils.redondearNum(x1)} ${nombreX1} y ${Utils.redondearNum(x2)} ${nombreX2} se obtuvo un Z de ${Utils.redondearNum(Z)}`;
     para.textContent = text;
     this.resultado.appendChild(para);
   }
@@ -120,7 +121,7 @@ class ManipuladorDOM {
     titulo.innerText = "Detalles:";
     detalles += "N° Iteraciones: " + iteraciones;
     for (let key of Object.keys(incognitas)) {
-      detalles += `\n${key} = ${this.redondearNum(incognitas[key])}`;
+      detalles += `\n${key} = ${Utils.redondearNum(incognitas[key])}`;
     }
     texto.innerText = detalles;
     box.append(titulo, texto);
@@ -132,7 +133,21 @@ class ManipuladorDOM {
     this.mostrarDetalles(incognitas, iteraciones);
   }
 
-  redondearNum(num) {
-    return num === undefined ? "-" : +num.toFixed(2); // el '+' remueve 0's innecesarios
+  obtenerLimitaciones() {
+    return Array.from(this.limitacionesContainer.childNodes);
+  }
+
+  obtenerCantidadLimitaciones() {
+    return this.obtenerLimitaciones().length;
+  }
+
+  obtenerObjetivo() {
+    // ver index.html -> 1 = max | 0 = min
+    return Number(this.objetivo.value);
+  }
+
+  // Para extraer los valores de cada INPUT o los comparadores en cada SELECT
+  obtenerValoresDeCampo(limitaciones, nombreCampo) {
+    return Array.from(limitaciones.childNodes).filter(e => e.tagName === nombreCampo).map(e => Number(e.value));
   }
 }

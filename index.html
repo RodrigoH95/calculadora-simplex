@@ -22,7 +22,11 @@
         <input class="input value" type="text" name="x2" id="x2" autocomplete="off">
       </div>
       <h2>Objetivo:</h2>
-      <label for="objetivo">Max Z = </label>
+      <select name="objetivo" id="objetivo" class="btn">
+        <option value="1">Max</option>
+        <option value="0">Min</option>
+      </select>
+      <span>Z =</span>
       <input class="input value" type="text" name="valueX1" class="value" id="valueX1" value="1" autocomplete="off">
       <span>x<sub>1</sub> + </span>
       <input class="input value" type="text" name="valueX2" class="value" id="valueX2" value="1" autocomplete="off">
@@ -38,6 +42,7 @@
     
     </div>
   </main>
+  <script src="utils.js"></script>
   <script src="DOM.js"></script>
   <script src="main.js"></script>
 </body>

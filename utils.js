@@ -14,4 +14,12 @@ class Utils {
   
     return Number(valor);
   }
+
+  static invertirValoresDeArreglo(arr) {
+    arr = arr.map(e => -e);
+  }
+
+  static invertirValoresDeObjeto(obj) {
+    Object.keys(obj).forEach(k => {if(obj[k] != 0) obj[k] *= -1});
+  }
 }

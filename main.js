@@ -21,6 +21,7 @@ class CalculadoraSimplex {
       e.preventDefault();
       this.limitsCount++;
       // Esta parte se debería realizar luego de comenzar el calculo
+      // REMOVER CUANDO SE HAGA EN OTRO LADO
       const nuevaIncognita = "x" + (this.limitsCount + 2); // Las variables de holgura comienzan desde 3 en adelante
       this.incognitas[nuevaIncognita] = 0;
       this.baseOriginal.push(nuevaIncognita);
@@ -49,7 +50,16 @@ class CalculadoraSimplex {
   }
 
   prepararDatos() {
+    let fila0 = [this.DOM.valueX1.value, this.DOM.valueX2.value];
     this.comprobacionesPrevias();
+    if (!this.objetivoEsMax) {
+      // invertir Z
+      Utils.invertirValoresDeArreglo(fila0);
+    }
+
+    if(this.usaMetodoM) {
+      // completar funcion Z y adecuarla (polinomios)
+    }
     // // Esta parte se debería realizar luego de comenzar el calculo
     // const nuevaIncognita = "x" + (this.limitsCount + 2); // Las variables de holgura comienzan desde 3 en adelante
     // this.incognitas[nuevaIncognita] = 0;
@@ -74,6 +84,7 @@ class CalculadoraSimplex {
     // Fila inicial
     const fila0 = new Array(Object.keys(this.incognitas).length + 1).fill(0); // +1 por termino independiente
     // Si se iguala funcion Z a 0 x1 y x2 se invierten
+    // REMOVER CUANDO SE HAGA EN OTRO LADO
     fila0[0] = this.DOM.valueX1.value * (this.objetivoEsMax ? -1 : 1);
     fila0[1] = this.DOM.valueX2.value * (this.objetivoEsMax ? -1 : 1);
     this.matrix.push(fila0);

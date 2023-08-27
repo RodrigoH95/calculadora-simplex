@@ -35,12 +35,14 @@ class CalculadoraSimplex {
 
   LimpiarDatos() {
     this.DOM.resultado.innerHTML = "";
+    this.DOM.slidesManager.reset();
     this.iteraciones = 0;
     this.matriz = [];
     this.resultado = {};
     this.usaMetodoM = false;
     this.incognitasZ = [];
     this.baseOriginal = [];
+    this.base = [];
     this.coeficientesZ = [];
     this.cantCoeficientes = 0;
     this.comparadores = [];
@@ -71,6 +73,7 @@ class CalculadoraSimplex {
   }
 
   formarMatriz() {
+    let info = [];
     for (let i = 0; i < this.coeficientesZ.length; i++) {
       this.cantCoeficientes++;
       this.incognitasZ.push("x" + this.cantCoeficientes);
@@ -89,7 +92,9 @@ class CalculadoraSimplex {
     this.completarFilas();
     this.matriz.push(this.coeficientesZ, ...this.coeficientesL);
 
-    this.mostrarTablaActual();
+    info.push("El objetivo es " + (this.objetivoEsMax ? "maximizar" : "minimizar") + " Z");
+    info.push(this.usaMetodoM ? "Se debe usar el método de la M" : "Se puede resolver con Simplex estándar");
+    this.mostrarEstadoActual("Primera tabla:", info);
   }
 
   agregarVariablesEspeciales() {
@@ -182,9 +187,11 @@ class CalculadoraSimplex {
   }
 
   calcular() {
+    let info = [];
     this.iteraciones++;
     const colVarEntrante = this.obtenerVariableEntrante();
     const filaVarSaliente = this.obtenerVariableSaliente(colVarEntrante);
+    info.push("Entra a la base " + this.incognitasZ[colVarEntrante] + " y sale " + this.base[filaVarSaliente]);
     this.base[filaVarSaliente] = this.incognitasZ[colVarEntrante];
     let nuevaMatriz = [...this.matriz];
     const valorBase = nuevaMatriz[filaVarSaliente][colVarEntrante];
@@ -220,7 +227,7 @@ class CalculadoraSimplex {
     if (this.obtenerVariableEntrante() != null) {
       nuevaMatriz = [];
       // Mostrar resultado parcial
-      this.mostrarTablaActual();
+      this.mostrarEstadoActual("Iteracion " + this.iteraciones, info);
       this.calcular();
     } else {
       for (let i = 0; i < this.matriz.length; i++) {
@@ -229,7 +236,7 @@ class CalculadoraSimplex {
         if (i == 0 && !this.objetivoEsMax) valor *= -1;
         this.resultado[this.base[i]] = valor;
       }
-      this.mostrarResultado();
+      this.mostrarEstadoActual("Resultado final:", [...info, this.crearDescripcion(), "Iteraciones en total: " + this.iteraciones]);
     }
   }
 
@@ -237,14 +244,15 @@ class CalculadoraSimplex {
     return this.incognitasZ.indexOf(this.base[fila]);
   }
 
-  mostrarResultado() {
-    // this.DOM.resultado.innerHTML = "";
-    this.mostrarTablaActual();
-    this.DOM.crearDetalles(this.resultado, this.iteraciones);
+  mostrarEstadoActual(titulo, info) {
+    this.DOM.crearSlide(titulo, info, this.matriz, ["Base", ...this.incognitasZ, "T.I"], this.base);
   }
 
-  mostrarTablaActual() {
-    this.DOM.crearTabla(this.matriz, ["Base", ...this.incognitasZ, "T.I"], this.base);
+  crearDescripcion() {
+    const { x1, x2, Z } = this.resultado;
+    const nombreX1 = this.DOM.nombreX1.value || "x1";
+    const nombreX2 = this.DOM.nombreX2.value || "x2";
+    return `Con ${Utils.redondearNum(x1)} ${nombreX1} y ${Utils.redondearNum(x2)} ${nombreX2} se obtuvo un Z de ${Utils.redondearNum(Z)}`;
   }
 
   validarDatos() {

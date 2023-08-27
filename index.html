@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="slides.css">
   <title>Simplex</title>
 </head>
 <body>
@@ -36,14 +37,16 @@
       <button id="btnCalcular" class="btn">Calcular</button>
     </form>
     <div id="resultado-contenedor">
-      <h2>Resultado:</h2>
-      <div id="resultado"></div>
+    <button id="btn-prev" class="btn btn-slide"><<</button>
+    <div id="resultado"><h2>Resultado:</h2></div>
+    <button id="btn-sig" class="btn btn-slide">>></button>
     </div>
     
     </div>
   </main>
   <script src="Polinomio.js"></script>
   <script src="utils.js"></script>
+  <script src="slides.js"></script>
   <script src="DOM.js"></script>
   <script src="calculadora.js"></script>
   <script src="main.js"></script>

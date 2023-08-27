@@ -24,6 +24,11 @@ form, #resultado-contenedor {
   margin: 0 4rem 3rem;
 }
 
+#resultado-contenedor {
+  position: relative;
+  display: flex;
+}
+
 .form-group {
   margin: 0.2rem 0;
 }
@@ -86,6 +91,11 @@ p {
 
 .btn:hover {
   filter: brightness(120%);
+  opacity: 1;
+}
+
+.btn:active {
+  filter: brightness(80%);
 }
 
 h1, h2 {

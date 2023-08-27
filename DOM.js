@@ -11,9 +11,11 @@ class ManipuladorDOM {
     this.valueX2 = document.getElementById("valueX2");
     this.resultado = document.getElementById("resultado");
     this.inputs = document.getElementsByClassName("input");
+    this.slidesManager = new SlideManager();
   }
 
   start() {
+    this.slidesManager.start();
     Array.from(this.inputs).forEach(input => { input.oninput = e => this.autoAdjustInput(e)});
 
     this.btnAgregarLimit.addEventListener("click", (e) => {
@@ -113,38 +115,26 @@ class ManipuladorDOM {
       }
       table.appendChild(tr);
     }
-    this.resultado.appendChild(table);
+    return table;
   }
 
-  crearDescripcion(objIncognitas) {
-    const { x1, x2, Z } = objIncognitas;
-    const nombreX1 = this.nombreX1.value || "x1";
-    const nombreX2 = this.nombreX2.value || "x2";
-    const para = document.createElement("p");
-    const text = `Con ${Utils.redondearNum(x1)} ${nombreX1} y ${Utils.redondearNum(x2)} ${nombreX2} se obtuvo un Z de ${Utils.redondearNum(Z)}`;
-    para.textContent = text;
-    this.resultado.appendChild(para);
-  }
-
-  mostrarDetalles(incognitas, iteraciones) {
+  crearSlide(titulo, info, matrix, arrNombreColumnas, arrVariablesBase) {
+    const tabla = this.crearTabla(matrix, arrNombreColumnas, arrVariablesBase);
     const box = document.createElement("div");
-    const titulo = document.createElement("h2");
-    const texto = document.createElement("p");
-    let detalles = "";
-
-    titulo.innerText = "Detalles:";
-    detalles += "N° Iteraciones: " + iteraciones;
-    for (let key of Object.keys(incognitas)) {
-      detalles += `\n${key} = ${Utils.redondearNum(incognitas[key])}`;
+    box.classList.add("contenedor-tabla");
+    const h2 = document.createElement("h2");
+    h2.innerText = titulo;
+    const textBox = document.createElement("div");
+    textBox.classList.add("info");
+    for (let text of info) {
+      const p = document.createElement("p");
+      p.innerText = text;
+      textBox.appendChild(p);
     }
-    texto.innerText = detalles;
-    box.append(titulo, texto);
+    box.append(h2, textBox, tabla);
     this.resultado.appendChild(box);
-  }
+    this.slidesManager.addSlide(box);
 
-  crearDetalles(incognitas, iteraciones) {
-    this.crearDescripcion(incognitas);
-    this.mostrarDetalles(incognitas, iteraciones);
   }
 
   obtenerLimitaciones() {

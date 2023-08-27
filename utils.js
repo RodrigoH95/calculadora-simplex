@@ -1,5 +1,6 @@
 class Utils {
   static redondearNum(num) {
+    if (num instanceof Polinomio) return num.toString();
     return num === undefined ? "-" : +num.toFixed(2); // el '+' remueve 0's innecesarios
   }
 
@@ -16,7 +17,7 @@ class Utils {
   }
 
   static invertirValoresDeArreglo(arr) {
-    arr = arr.map(e => -e);
+    return arr.map(e => e instanceof Polinomio ? e.Multiplicar(-1) : -e);
   }
 
   static invertirValoresDeObjeto(obj) {

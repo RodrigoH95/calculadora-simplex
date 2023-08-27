@@ -17,6 +17,9 @@ class ManipuladorDOM {
     Array.from(this.inputs).forEach(input => { input.oninput = e => this.autoAdjustInput(e)});
   }
 
+  getValor(nombre) {
+    return Number(this["value" + nombre].value);
+  }
   crearInputBox() {
     const box = this.crearInputGroup();
     this.limitacionesContainer.appendChild(box);
@@ -50,7 +53,6 @@ class ManipuladorDOM {
     const eq = this.crearOpcion("0", "="); // equal
     const ge = this.crearOpcion("1", "≥"); // greater equal
     select.append(le, eq, ge);
-    // select.onchange = (e) => console.log(e.target.value);
     return select;
   }
 
@@ -104,8 +106,8 @@ class ManipuladorDOM {
 
   crearDescripcion(objIncognitas) {
     const { x1, x2, Z } = objIncognitas;
-    const nombreX1 = this.nombreX1.value || "";
-    const nombreX2 = this.nombreX2.value || "";
+    const nombreX1 = this.nombreX1.value || "x1";
+    const nombreX2 = this.nombreX2.value || "x2";
     const para = document.createElement("p");
     const text = `Con ${Utils.redondearNum(x1)} ${nombreX1} y ${Utils.redondearNum(x2)} ${nombreX2} se obtuvo un Z de ${Utils.redondearNum(Z)}`;
     para.textContent = text;

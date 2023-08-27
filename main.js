@@ -2,17 +2,21 @@ class CalculadoraSimplex {
   constructor() {
     this.limitsCount = 0;
     this.nroVariables = 2;
-    this.incognitas = {
-      x1: 0,
-      x2: 0,
-    };
     this.iteraciones = 0;
-    this.baseOriginal = ["Z"];
     this.base = [];
-    this.matrix = [];
+    this.DOM = new ManipuladorDOM();
+
+    this.matriz = [];
+    this.resultado = {};
     this.objetivoEsMax = true;
     this.usaMetodoM = false;
-    this.DOM = new ManipuladorDOM();
+    this.incognitasZ = [];
+    this.baseOriginal = [];
+    this.coeficientesZ = [];
+    this.cantCoeficientes = 0;
+    this.comparadores = [];
+    this.coeficientesL = [];
+    this.TI = []; // Terminos independientes
   }
 
   start() {
@@ -20,11 +24,6 @@ class CalculadoraSimplex {
     this.DOM.btnAgregarLimit.addEventListener("click", (e) => {
       e.preventDefault();
       this.limitsCount++;
-      // Esta parte se debería realizar luego de comenzar el calculo
-      // REMOVER CUANDO SE HAGA EN OTRO LADO
-      const nuevaIncognita = "x" + (this.limitsCount + 2); // Las variables de holgura comienzan desde 3 en adelante
-      this.incognitas[nuevaIncognita] = 0;
-      this.baseOriginal.push(nuevaIncognita);
       this.DOM.crearInputBox(this.limitsCount);
     });
 
@@ -34,8 +33,6 @@ class CalculadoraSimplex {
       this.DOM.limitacionesContainer.removeChild(
         this.DOM.limitacionesContainer.lastChild
       );
-      const incognitaAEliminar = this.baseOriginal.pop();
-      delete this.incognitas[incognitaAEliminar];
       this.limitsCount--;
     });
 
@@ -44,89 +41,148 @@ class CalculadoraSimplex {
       if (!this.validarDatos()) return;
       this.LimpiarDatos();
       this.prepararDatos();
-      this.completarMatriz();
+      this.comprobacionesPrevias();
+      this.formarMatriz();
       this.calcular();
     });
   }
 
-  prepararDatos() {
-    let fila0 = [this.DOM.valueX1.value, this.DOM.valueX2.value];
-    this.comprobacionesPrevias();
-    if (!this.objetivoEsMax) {
-      // invertir Z
-      Utils.invertirValoresDeArreglo(fila0);
-    }
+  LimpiarDatos() {
+    this.iteraciones = 0;
+    this.matriz = [];
+    this.usaMetodoM = false;
+    this.incognitasZ = [];
+    this.baseOriginal = [];
+    this.coeficientesZ = [];
+    this.cantCoeficientes = 0;
+    this.comparadores = [];
+    this.coeficientesL = [];
+    this.TI = [];
+  }
 
-    if(this.usaMetodoM) {
-      // completar funcion Z y adecuarla (polinomios)
-    }
-    // // Esta parte se debería realizar luego de comenzar el calculo
-    // const nuevaIncognita = "x" + (this.limitsCount + 2); // Las variables de holgura comienzan desde 3 en adelante
-    // this.incognitas[nuevaIncognita] = 0;
-    // this.baseOriginal.push(nuevaIncognita);
+  prepararDatos() {
+    // Obtencion de valores de coeficientes en funcion Z
+    this.coeficientesZ.push(this.DOM.getValor("X1"));
+    this.coeficientesZ.push(this.DOM.getValor("X2"));
+
+    // Seteo de base y termino independiente para funcion Z
+    this.baseOriginal.push("Z");
+    this.TI.push(0);
+
+    // Obtencion de valores de inputs y comparadores de cada limitacion
+    for (const limit of this.DOM.obtenerLimitaciones()) {
+      this.coeficientesL.push(this.DOM.obtenerValoresDeCampo(limit, "INPUT"));
+      this.comparadores.push(...this.DOM.obtenerValoresDeCampo(limit, "SELECT"));
+    } 
   }
 
   comprobacionesPrevias() {
     this.objetivoEsMax = Boolean(this.DOM.obtenerObjetivo());
-    this.usaMetodoM = !this.limitacionesMenorIgual();
+    if (Math.max(...this.comparadores) >= 0) this.usaMetodoM = true;
+
+    if (!this.objetivoEsMax)
+      this.coeficientesZ = Utils.invertirValoresDeArreglo(this.coeficientesZ);
   }
 
-  limitacionesMenorIgual() {
-    const limitaciones = this.DOM.obtenerLimitaciones();
-    for(let i = 0; i < limitaciones.length; i++) {
-      const valor = this.DOM.obtenerValoresDeCampo(limitaciones[i], "SELECT");
-      if (valor >= 0) return false; // 0 - igual | 1 - mayor o igual
+  // LIMPIAR ESTA FUNCION
+  formarMatriz() {
+    for (let i = 0; i < this.coeficientesZ.length; i++) {
+      this.cantCoeficientes++;
+      this.incognitasZ.push("x" + this.cantCoeficientes);
     }
-    return true;
-  }
 
-  completarMatriz() {
-    // Fila inicial
-    const fila0 = new Array(Object.keys(this.incognitas).length + 1).fill(0); // +1 por termino independiente
-    // Si se iguala funcion Z a 0 x1 y x2 se invierten
-    // REMOVER CUANDO SE HAGA EN OTRO LADO
-    fila0[0] = this.DOM.valueX1.value * (this.objetivoEsMax ? -1 : 1);
-    fila0[1] = this.DOM.valueX2.value * (this.objetivoEsMax ? -1 : 1);
-    this.matrix.push(fila0);
+    // Extraccion de terminos independientes
+    this.TI.push(...this.coeficientesL.map((r) => r.pop()));
 
-    // Se obtiene array con los contenedores de limitaciones
-    const limitaciones = this.DOM.obtenerLimitaciones();
-    for (let i = 0; i < limitaciones.length; i++) {
-      // Se extraen los valores en los inputs de cada fila de limitaciones
-      const values = this.DOM.obtenerValoresDeCampo(limitaciones[i], "INPUT");
-      const terminoInd = values.pop();
-      const filan = new Array(fila0.length - 1).fill(0);
-      for (let j = 0; j < fila0.length; j++) {
-        // Se llena la fila con los valores de los inputs
-        if (values[j]) filan[j] = values[j];
-        // Chequear si corresponde colocar una incognita en la posicion (Crea la matriz identidad)
-        if (this.nroVariables + i == j) filan[j] = 1;
+    // Se agregan los coeficientes a cada fila
+    for (let i = 0; i < this.comparadores.length; i++) {
+      this.cantCoeficientes++;
+      switch (this.comparadores[i]) {
+        case -1:
+          this.incognitasZ.push("x" + this.cantCoeficientes);
+          this.coeficientesL[i][this.cantCoeficientes - 1] = 1;
+          this.coeficientesZ.push(0);
+          this.baseOriginal.push("x" + this.cantCoeficientes);
+          break;
+        case 0:
+          this.incognitasZ.push("r" + this.cantCoeficientes);
+          this.coeficientesL[i][this.cantCoeficientes - 1] = 1;
+          this.coeficientesZ.push(new Polinomio(0, -1));
+          this.baseOriginal.push("r" + this.cantCoeficientes);
+          break;
+        case 1:
+          this.incognitasZ.push("s" + this.cantCoeficientes);
+          this.coeficientesL[i][this.cantCoeficientes - 1] = -1;
+          this.coeficientesZ.push(0);
+          this.cantCoeficientes++;
+          this.incognitasZ.push("r" + this.cantCoeficientes);
+          this.coeficientesL[i][this.cantCoeficientes - 1] = 1;
+          this.coeficientesZ.push(new Polinomio(0, -1));
+          this.baseOriginal.push("r" + this.cantCoeficientes);
+          break;
       }
-      filan.push(terminoInd);
-      this.matrix.push(filan);
+    }
+
+    this.base = [...this.baseOriginal];
+
+    // Se iguala funcion Z a 0
+    this.coeficientesZ = Utils.invertirValoresDeArreglo(this.coeficientesZ);
+    this.coeficientesZ.push(this.TI[0]);
+    // Se convierten los terminos en polinomios para trabajarlos mas adelante
+    if (this.usaMetodoM)
+      this.coeficientesZ = Polinomio.CovertirEnArrayDePolinomios(this.coeficientesZ);
+
+    // Se llenan los espacios vacios de cada limitacion con 0's
+    for (let i = 0; i < this.coeficientesL.length; i++) {
+      this.llenarFila(this.coeficientesL[i]);
+      // Se agrega T.I -- TI[0] es para Z
+      this.coeficientesL[i].push(this.TI[i + 1]);
+      if (this.comparadores[i] < 0) continue;
+      // Si el comparador es = o >= se adecua la funcion Z
+      this.adecuarFuncionObjetivo(this.coeficientesL[i]);
+    }
+    this.matriz.push(this.coeficientesZ, ...this.coeficientesL);
+  }
+
+  llenarFila(fila) {
+    fila.length = this.cantCoeficientes;
+    for (let i = 0; i < fila.length; i++) {
+      if (!(i in fila)) fila[i] = 0;
     }
   }
 
-  LimpiarDatos() {
-    this.iteraciones = 0;
-    this.matrix.length = 0;
-    this.base = [...this.baseOriginal];
-    delete this.incognitas["Z"];
-    Object.keys(this.incognitas).forEach((k) => (this.incognitas[k] = 0));
+  adecuarFuncionObjetivo(arr) {
+    for (let i = 0; i <= this.incognitasZ.length; i++) {
+      const M = new Polinomio(0, -1);
+      const mult = M.Multiplicar(arr[i]);
+      if (this.coeficientesZ[i] instanceof Polinomio) {
+        this.coeficientesZ[i] = this.coeficientesZ[i].Sumar(mult);
+      } else if (mult instanceof Polinomio) {
+        this.coeficientesZ[i] = mult.Sumar(this.coeficientesZ[i]);
+      } else {
+        this.coeficientesZ[i] = this.coeficientesZ[i] + mult;
+      }
+    }
   }
 
   obtenerVariableEntrante() {
-    const valorMinimo = Math.min(...this.matrix[0]);
-    return valorMinimo < 0 ? this.matrix[0].indexOf(valorMinimo) : null;
+    // Coeficientes de la fila 0 de la matriz sin T.I
+    const fila0 = this.matriz[0].slice(0, -1).map((v) => {
+      if (v instanceof Polinomio) {
+        return v.m != 0 ? v.m : v.c;
+      } else return v;
+    });
+    const valorMinimo = Math.min(...fila0);
+    return valorMinimo < 0 ? fila0.indexOf(valorMinimo) : null;
   }
 
   obtenerVariableSaliente(posVarEntrante) {
     let menor = Infinity;
     let indice = 0;
-    const posUltimoElemento = this.matrix[0].length - 1;
-    for (let fila = 1; fila < this.matrix.length; fila++) {
-      const terminoInd = this.matrix[fila][posUltimoElemento];
-      const divisor = this.matrix[fila][posVarEntrante];
+    const posUltimoElemento = this.matriz[0].length - 1;
+    for (let fila = 1; fila < this.matriz.length; fila++) {
+      const terminoInd = this.matriz[fila][posUltimoElemento];
+      const divisor = this.matriz[fila][posVarEntrante];
       if (divisor <= 0) continue;
       const cociente = terminoInd / divisor;
       if (cociente < menor) {
@@ -141,49 +197,62 @@ class CalculadoraSimplex {
     this.iteraciones++;
     const colVarEntrante = this.obtenerVariableEntrante();
     const filaVarSaliente = this.obtenerVariableSaliente(colVarEntrante);
-    this.base[filaVarSaliente] = Object.keys(this.incognitas)[colVarEntrante];
+    this.base[filaVarSaliente] = this.incognitasZ[colVarEntrante];
+    let nuevaMatriz = [...this.matriz];
+    const valorBase = nuevaMatriz[filaVarSaliente][colVarEntrante];
+    const filaBase = nuevaMatriz[filaVarSaliente];
+    const longitudFila = nuevaMatriz[0].length; 
 
-    const nuevaMatrix = [...this.matrix];
-    const valorBase = nuevaMatrix[filaVarSaliente][colVarEntrante];
-    const filaBase = nuevaMatrix[filaVarSaliente];
-    const longitudFila = nuevaMatrix[0].length;
     for (let i = 0; i < longitudFila; i++) {
       filaBase[i] /= valorBase;
     }
-
     const colPivote = this.obtenerColPivote(filaVarSaliente);
-    for (let i = 0; i < this.matrix.length; i++) {
+ 
+    for (let i = 0; i < this.matriz.length; i++) {
       if (i == filaVarSaliente) continue;
-      const valorBase = this.matrix[i][colPivote];
+      const valorBase = this.matriz[i][colPivote];
       for (let j = 0; j < longitudFila; j++) {
-        nuevaMatrix[i][j] = filaBase[j] * -valorBase + nuevaMatrix[i][j];
+        if (i == 0 && valorBase instanceof Polinomio) {
+          const poli = new Polinomio(valorBase.c, valorBase.m);
+          poli.Multiplicar(-1);
+          poli.Multiplicar(filaBase[j]);
+          nuevaMatriz[i][j] = poli.Sumar(nuevaMatriz[i][j]);
+        } else {
+          if (nuevaMatriz[i][j] instanceof Polinomio) {
+            nuevaMatriz[i][j] = nuevaMatriz[i][j].Sumar(filaBase[j] * -valorBase);
+          } else {
+            nuevaMatriz[i][j] = filaBase[j] * -valorBase + nuevaMatriz[i][j];
+          }
+        }
       }
     }
-
-    this.matrix = [...nuevaMatrix];
+    this.matriz = [...nuevaMatriz];
     if (this.obtenerVariableEntrante() != null) {
-      nuevaMatrix.length = 0;
+      nuevaMatriz = [];
       this.calcular();
     } else {
-      for (let i = 0; i < this.matrix.length; i++) {
-        this.incognitas[this.base[i]] = this.matrix[i][longitudFila - 1];
+      for (let i = 0; i < this.matriz.length; i++) {
+        let valor = this.matriz[i][longitudFila - 1];
+        // Z se invierte si el objetivo es minimizar
+        if( i == 0 && !this.objetivoEsMax) valor *= -1;
+        this.resultado[this.base[i]] = valor;
       }
       this.mostrarResultado();
     }
   }
 
   obtenerColPivote(fila) {
-    return Object.keys(this.incognitas).indexOf(this.base[fila]);
+    return this.incognitasZ.indexOf(this.base[fila]);
   }
 
   mostrarResultado() {
     this.DOM.resultado.innerHTML = "";
     this.DOM.crearTabla(
-      this.matrix,
-      ["Base", ...Object.keys(this.incognitas), "T.I"],
+      this.matriz,
+      ["Base", ...this.incognitasZ, "T.I"],
       this.base
     );
-    this.DOM.crearDetalles(this.incognitas, this.iteraciones);
+    this.DOM.crearDetalles(this.resultado, this.iteraciones);
   }
 
   validarDatos() {
@@ -224,12 +293,6 @@ class CalculadoraSimplex {
       }
     }
     return true;
-  }
-
-  logInfo() {
-    console.log("Incognitas:", this.incognitas);
-    console.log("Base:", this.base);
-    console.table("Matriz:", this.matrix);
   }
 }
 

@@ -15,6 +15,17 @@ class ManipuladorDOM {
 
   start() {
     Array.from(this.inputs).forEach(input => { input.oninput = e => this.autoAdjustInput(e)});
+
+    this.btnAgregarLimit.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.crearInputBox();
+    });
+
+    this.btnEliminarLimit.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (this.limitacionesContainer.childElementCount <= 0) return;
+      this.limitacionesContainer.removeChild(this.limitacionesContainer.lastChild);
+    });
   }
 
   getValor(nombre) {

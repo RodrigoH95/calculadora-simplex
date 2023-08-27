@@ -7,7 +7,7 @@ class Utils {
   static procesarNumero(valor) {
     if(typeof valor === "string" && valor.includes("/")) {
       const partes = valor.split("/");
-      if(partes[1] == 0) {
+      if(partes[1] == 0 || partes.length > 2) {
         return NaN;
       }
       return Number(partes[0] / partes[1]);

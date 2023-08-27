@@ -18,8 +18,9 @@ class ManipuladorDOM {
   }
 
   getValor(nombre) {
-    return Number(this["value" + nombre].value);
+    return Utils.procesarNumero(this["value" + nombre].value);
   }
+
   crearInputBox() {
     const box = this.crearInputGroup();
     this.limitacionesContainer.appendChild(box);
@@ -64,7 +65,7 @@ class ManipuladorDOM {
   }
 
   autoAdjustInput(e) {
-    e.target.style.width = e.target.value.length * 7 + "px"; // 7 es ancho de cada caracter
+    e.target.style.width = e.target.value.length * 8 + "px"; // 7 es ancho de cada caracter
   }
 
   crearTexto(texto) {
@@ -150,6 +151,6 @@ class ManipuladorDOM {
 
   // Para extraer los valores de cada INPUT o los comparadores en cada SELECT
   obtenerValoresDeCampo(limitaciones, nombreCampo) {
-    return Array.from(limitaciones.childNodes).filter(e => e.tagName === nombreCampo).map(e => Number(e.value));
+    return Array.from(limitaciones.childNodes).filter(e => e.tagName === nombreCampo).map(e => Utils.procesarNumero(e.value));
   }
 }

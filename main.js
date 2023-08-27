@@ -16,15 +16,14 @@ class CalculadoraSimplex {
     this.cantCoeficientes = 0;
     this.comparadores = [];
     this.coeficientesL = [];
-    this.TI = []; // Terminos independientes
+    this.TI = [];
   }
 
   start() {
     this.DOM.start();
     this.DOM.btnAgregarLimit.addEventListener("click", (e) => {
       e.preventDefault();
-      this.limitsCount++;
-      this.DOM.crearInputBox(this.limitsCount);
+      this.DOM.crearInputBox();
     });
 
     this.DOM.btnEliminarLimit.addEventListener("click", (e) => {
@@ -33,7 +32,6 @@ class CalculadoraSimplex {
       this.DOM.limitacionesContainer.removeChild(
         this.DOM.limitacionesContainer.lastChild
       );
-      this.limitsCount--;
     });
 
     this.DOM.btnCalcular.addEventListener("click", (e) => {
@@ -50,6 +48,7 @@ class CalculadoraSimplex {
   LimpiarDatos() {
     this.iteraciones = 0;
     this.matriz = [];
+    this.resultado = {};
     this.usaMetodoM = false;
     this.incognitasZ = [];
     this.baseOriginal = [];
@@ -257,8 +256,8 @@ class CalculadoraSimplex {
 
   validarDatos() {
     let valid = true;
-    const x1 = this.DOM.valueX1.value;
-    const x2 = this.DOM.valueX2.value;
+    const x1 = this.DOM.getValor("X1");
+    const x2 = this.DOM.getValor("X2");
     let error = "";
 
     if (!(x1 && x2 && Number(Number(x1) + Number(x2)))) {
@@ -289,7 +288,7 @@ class CalculadoraSimplex {
         .filter((el) => el.tagName == "INPUT")
         .map((input) => input.value);
       for (const num of valores) {
-        if (!num || isNaN(Number(num))) return false;
+        if (!num || isNaN(Utils.procesarNumero(num))) return false;
       }
     }
     return true;

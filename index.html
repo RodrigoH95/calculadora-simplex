@@ -3,16 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="slides.css">
+  <link rel="stylesheet" href="./styles/style.css">
+  <link rel="stylesheet" href="./styles/slides.css">
   <title>Simplex</title>
 </head>
 <body>
+  <div id="aux">
+    <button class="btn" id="btn-calculos">></button>
+    <h2>Cálculos auxiliares</h2>
+    <div id="calculos">
+    </div>
+  </div>
   <header>
     <h1>Programación lineal. Método Simplex</h1>
   </header>
   <main>
-    <form>
+    <form class="box">
       <h2>Describa que representa cada variable:</h2>
       <div class="form-group">
         <label for="x1">Variable x<sub>1</sub>:</label>
@@ -36,21 +42,20 @@
       <div id="limitaciones"></div>
       <button id="btnCalcular" class="btn">Calcular</button>
     </form>
-    <div id="resultado-contenedor">
+    <div id="resultado-contenedor" class="box">
     <button id="btn-prev" class="btn btn-slide"><<</button>
     <div id="resultado"><h2>Resultado:</h2></div>
     <button id="btn-resultado" class="btn"> ir a solución...</button>
     <button id="btn-sig" class="btn btn-slide">>></button>
     </div>
-    
     </div>
   </main>
-  <script src="Polinomio.js"></script>
-  <script src="utils.js"></script>
-  <script src="slides.js"></script>
-  <script src="DOM.js"></script>
-  <script src="info.js"></script>
-  <script src="calculadora.js"></script>
-  <script src="main.js"></script>
+  <script src="./scripts/Polinomio.js"></script>
+  <script src="./scripts/utils.js"></script>
+  <script src="./scripts/slides.js"></script>
+  <script src="./scripts/DOM.js"></script>
+  <script src="./scripts/info.js"></script>
+  <script src="./scripts/calculadora.js"></script>
+  <script src="./scripts/main.js"></script>
 </body>
 </html>

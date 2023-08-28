@@ -31,13 +31,17 @@ class CalculadoraSimplex {
       this.comprobacionesPrevias();
       this.formarMatriz();
       this.calcular();
+      this.DOM.btnCalculos.classList.add("active");
+      setTimeout(() => {
+        this.DOM.btnCalculos.classList.remove("active");
+      }, 800);
     });
   }
 
   LimpiarDatos() {
-    this.DOM.resultado.innerHTML = "";
-    this.DOM.slidesManager.reset();
+    this.DOM.limpiar();
     this.info.clearLog();
+    this.info.clearCalculos();
     this.iteraciones = 0;
     this.matriz = [];
     this.resultado = {};
@@ -74,7 +78,7 @@ class CalculadoraSimplex {
     if (!this.objetivoEsMax) this.coeficientesZ = Utils.invertirValoresDeArreglo(this.coeficientesZ);
     this.info.log("El objetivo es " + (this.objetivoEsMax ? "maximizar" : "minimizar") + " Z");
     this.info.log(this.usaMetodoM ? "Se debe usar el método de la M" : "Se puede resolver con Simplex estándar");
-    this.DOM.crearSlideInformativa("Consideraciones previas:", this.info.getLog());
+    this.mostrarInfo("Consideraciones previas:", this.info.getLog());
   }
 
   formarMatriz() {
@@ -84,9 +88,8 @@ class CalculadoraSimplex {
     }
     // Extraccion de terminos independientes
     this.TI.push(...this.coeficientesL.map((r) => r.pop()));
-    this.info.newPage();
     this.agregarVariablesEspeciales();
-    this.DOM.crearSlideInformativa("Variables especiales:", this.info.getLog());
+    this.mostrarInfo("Variables especiales:", this.info.getLog());
     this.base = [...this.baseOriginal];
 
     // Se iguala funcion Z a 0
@@ -97,10 +100,9 @@ class CalculadoraSimplex {
     if (this.usaMetodoM) this.coeficientesZ = Polinomio.CovertirEnArrayDePolinomios(this.coeficientesZ);
     this.completarFilas();
     this.matriz.push(this.coeficientesZ, ...this.coeficientesL);
-    this.info.newPage();
-    this.info.log("Función Z igualada a 0:");
+    this.info.log("Función Z:");
     this.info.log(this.obtenerFuncionZIgualadaACero());
-    this.mostrarEstadoActual("Primera tabla:", this.info.getLog());
+    this.mostrarEstadoActual("Tabla inicial:", this.info.getLog());
   }
 
   obtenerFuncionZIgualadaACero() {
@@ -114,7 +116,9 @@ class CalculadoraSimplex {
       }
       funcion += termino + this.incognitasZ[i];
     }
-    funcion += " = 0";
+    let TI = this.matriz[0][this.matriz[0].length - 1];
+    funcion += " = ";
+    funcion += TI instanceof Polinomio ? TI.toString() : TI;
     return funcion;
   }
 
@@ -155,10 +159,9 @@ class CalculadoraSimplex {
       this.llenarFila(this.coeficientesL[i]);
       this.coeficientesL[i].push(this.TI[i + 1]);
       if (this.comparadores[i] < 0) continue;
-      this.info.newPage();
       this.info.log("Se debe adecuar función objetivo debido a " + (i + 1) + "° limitación:");
       this.adecuarFuncionObjetivo(this.coeficientesL[i]);
-      this.DOM.crearSlideInformativa("Adecuación de función objetivo", this.info.getLog());
+      this.mostrarInfo("Adecuación de función objetivo", this.info.getLog());
     }
   }
 
@@ -170,7 +173,7 @@ class CalculadoraSimplex {
   }
 
   adecuarFuncionObjetivo(arr) {
-    for (let i = 0; i <= this.incognitasZ.length; i++) {
+    for (let i = 0; i < arr.length; i++) {
       const M = new Polinomio(0, -1);
       const valorInicial = this.coeficientesZ[i] instanceof Polinomio ? this.coeficientesZ[i].toString() : this.coeficientesZ[i];
       let terminos = [valorInicial];
@@ -194,14 +197,34 @@ class CalculadoraSimplex {
   }
 
   obtenerVariableEntrante() {
-    // Coeficientes de la fila 0 de la matriz sin T.I
-    const fila0 = this.matriz[0].slice(0, -1).map((v) => {
-      if (v instanceof Polinomio) {
-        return v.m != 0 ? v.m : v.c;
-      } else return v;
-    });
-    const valorMinimo = Math.min(...fila0);
-    return valorMinimo < 0 ? fila0.indexOf(valorMinimo) : null;
+    let menorCoeficienteM = Infinity;
+    let posMenorM;
+    let menorConstante = Infinity;
+    let posMenorCte;
+    for (let i = 0; i < this.matriz[0].length - 1; i++) {
+        const elem = this.matriz[0][i];
+        if (elem instanceof Polinomio) {
+          if (elem.m < menorCoeficienteM) {
+            menorCoeficienteM = elem.m;
+            posMenorM = i;
+          } 
+          else if (elem.m == menorCoeficienteM && elem.c < this.matriz[0][posMenorM].c) {
+            posMenorM = i;
+          }
+        } else {
+          if (elem < menorConstante) {
+            menorConstante = elem;
+            posMenorCte = i;
+          }
+        }
+    }
+    if (menorCoeficienteM < 0) {
+      return posMenorM;
+    } 
+    else if (menorConstante < 0) {
+      return posMenorCte;
+    }
+    else return null;
   }
 
   obtenerVariableSaliente(posVarEntrante) {
@@ -222,8 +245,8 @@ class CalculadoraSimplex {
   }
 
   calcular() {
-    this.info.newPage();
     this.iteraciones++;
+    this.info.calculosAuxiliares("====== Iteración " + this.iteraciones + " ======");
     const colVarEntrante = this.obtenerVariableEntrante();
     const filaVarSaliente = this.obtenerVariableSaliente(colVarEntrante);
     this.info.log(`Entra a la base ${this.incognitasZ[colVarEntrante]} y sale ${this.base[filaVarSaliente]}.`);
@@ -232,16 +255,19 @@ class CalculadoraSimplex {
     const valorBase = nuevaMatriz[filaVarSaliente][colVarEntrante];
     const filaBase = nuevaMatriz[filaVarSaliente];
     const longitudFila = nuevaMatriz[0].length;
-
+    this.info.calculosAuxiliares(`Fila pivote: ${filaVarSaliente}`);
+    this.info.calculosAuxiliares(`${filaBase.map(n => Utils.convertirEnString(n) + "/" + Utils.convertirEnString(valorBase)).join(", ")}`);
     for (let i = 0; i < longitudFila; i++) {
       filaBase[i] /= valorBase;
     }
+    this.info.calculosAuxiliares(`${filaBase.map(n => Utils.convertirEnString(n)).join(", ")}`);
     const colPivote = this.obtenerColPivote(filaVarSaliente);
-
     for (let i = 0; i < this.matriz.length; i++) {
       if (i == filaVarSaliente) continue;
+      this.info.calculosAuxiliares(" -- fila " + i + ":");
       const valorBase = this.matriz[i][colPivote];
       for (let j = 0; j < longitudFila; j++) {
+        const valorInicialDeCelda = Utils.convertirEnString(nuevaMatriz[i][j]);
         if (i == 0 && valorBase instanceof Polinomio) {
           const poli = new Polinomio(valorBase.c, valorBase.m);
           poli.Multiplicar(-1);
@@ -256,13 +282,15 @@ class CalculadoraSimplex {
             nuevaMatriz[i][j] = filaBase[j] * -valorBase + nuevaMatriz[i][j];
           }
         }
+        const terminos = [filaBase[j], valorBase, nuevaMatriz[i][j]].map(n => Utils.convertirEnString(n));
+        this.info.calculosAuxiliares(`\t${terminos[0]} x (-1)(${terminos[1]}) + ${valorInicialDeCelda} = ${terminos[2]}`);
       }
     }
     this.matriz = [...nuevaMatriz];
     if (this.obtenerVariableEntrante() != null) {
       nuevaMatriz = [];
       // Mostrar resultado parcial
-      this.mostrarEstadoActual("Iteracion " + this.iteraciones, this.info.getLog());
+      this.mostrarEstadoActual("Iteración " + this.iteraciones, this.info.getLog());
       this.calcular();
     } else {
       for (let i = 0; i < this.matriz.length; i++) {
@@ -277,6 +305,7 @@ class CalculadoraSimplex {
       this.info.log(this.crearDescripcion());
       this.info.log("Iteraciones en total: " + this.iteraciones);
       this.mostrarEstadoActual("Resultado final:", this.info.getLog());
+      this.DOM.mostrarCalculos(this.info.getCalculos());
     }
   }
 
@@ -287,6 +316,12 @@ class CalculadoraSimplex {
   mostrarEstadoActual(titulo, info) {
     if (!info) info = [];
     this.DOM.crearSlide(titulo, info, this.matriz, ["Base", ...this.incognitasZ, "T.I"], this.base);
+    this.info.clearLog();
+  }
+
+  mostrarInfo(titulo, info) {
+    this.DOM.crearSlideInformativa(titulo, info);
+    this.info.clearLog();
   }
 
   crearDescripcion() {

@@ -16,6 +16,10 @@ class Utils {
     return Number(valor);
   }
 
+  static convertirEnString(num) {
+    return num instanceof Polinomio ? num.toString() : String(+num.toFixed(2));
+  }
+
   static invertirValoresDeArreglo(arr) {
     return arr.map(e => e instanceof Polinomio ? e.Multiplicar(-1) : -e);
   }

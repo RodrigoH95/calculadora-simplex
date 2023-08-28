@@ -2,14 +2,17 @@ class ManipuladorDOM {
   constructor() {
     this.objetivo = document.getElementById("objetivo");
     this.limitacionesContainer = document.getElementById("limitaciones");
+    this.contenedorLateral = document.getElementById("aux");
+    this.calculosContainer = document.getElementById("calculos");
     this.btnAgregarLimit = document.getElementById("btnAgregarLimit");
     this.btnEliminarLimit = document.getElementById("btnEliminarLimit");
     this.btnCalcular = document.getElementById("btnCalcular");
+    this.btnCalculos = document.getElementById("btn-calculos");
     this.nombreX1 = document.getElementById("x1");
     this.nombreX2 = document.getElementById("x2");
     this.valueX1 = document.getElementById("valueX1");
     this.valueX2 = document.getElementById("valueX2");
-    this.resultado = document.getElementById("resultado");
+    this.root = document.getElementById("resultado");
     this.inputs = document.getElementsByClassName("input");
     this.slidesManager = new SlideManager();
   }
@@ -28,9 +31,20 @@ class ManipuladorDOM {
       if (this.limitacionesContainer.childElementCount <= 0) return;
       this.limitacionesContainer.removeChild(this.limitacionesContainer.lastChild);
     });
+
+    this.btnCalculos.addEventListener("click", () => {
+      this.contenedorLateral.classList.toggle("active");
+    });
+  }
+
+  limpiar() {
+    this.calculosContainer.innerHTML = "";
+    this.root.innerHTML = "";
+    this.slidesManager.reset();
   }
 
   getValor(nombre) {
+    // Nombre puede ser X1 o X2
     return Utils.procesarNumero(this["value" + nombre].value);
   }
 
@@ -120,29 +134,27 @@ class ManipuladorDOM {
 
   crearSlide(titulo, info, matrix, arrNombreColumnas, arrVariablesBase) {
     const tabla = this.crearTabla(matrix, arrNombreColumnas, arrVariablesBase);
+    const box = this.crearCaja(titulo, info);
+    box.appendChild(tabla);
+    this.root.appendChild(box);
+    this.slidesManager.addSlide(box);
+  }
+
+  crearSlideInformativa(titulo, info) {
+    const box = this.crearCaja(titulo, info);
+    // Se agrega clase "textBox" al elemento info para centrar la caja de texto ya que no hay tablas
+    box.childNodes[1].classList.add("textBox");
+    this.root.appendChild(box);
+    this.slidesManager.addSlide(box);
+  }
+
+  crearCaja(titulo, info) {
     const box = document.createElement("div");
     box.classList.add("contenedor-tabla");
     const h2 = document.createElement("h2");
     h2.innerText = titulo;
     const textBox = document.createElement("div");
     textBox.classList.add("info");
-    for (let text of info) {
-      const p = document.createElement("p");
-      p.innerText = text;
-      textBox.appendChild(p);
-    }
-    box.append(h2, textBox, tabla);
-    this.resultado.appendChild(box);
-    this.slidesManager.addSlide(box);
-  }
-
-  crearSlideInformativa(titulo, info) {
-    const box = document.createElement("div");
-    box.classList.add("contenedor-tabla");
-    const h2 = document.createElement("h2");
-    h2.innerText = titulo;
-    const textBox = document.createElement("div");
-    textBox.classList.add("info", "textBox");
     if (info.length > 0) {
       for (let text of info) {
         const p = document.createElement("p");
@@ -151,8 +163,15 @@ class ManipuladorDOM {
       }
     }
     box.append(h2, textBox);
-    this.resultado.appendChild(box);
-    this.slidesManager.addSlide(box);
+    return box;
+  }
+
+  mostrarCalculos(arrCalculos) {
+    for (let text of arrCalculos) {
+      const p = document.createElement("p");
+      p.innerText = text;
+      this.calculosContainer.appendChild(p);
+    }
   }
 
   obtenerLimitaciones() {

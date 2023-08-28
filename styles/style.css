@@ -190,4 +190,11 @@ h1, h2 {
   #resultado {
     overflow-x: auto;
   }
+
+  .contenedor-tabla {
+    font-size: 12px;
+    &h2 {
+      font-size: 16px;
+    }
+  }
 }

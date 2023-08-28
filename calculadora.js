@@ -5,6 +5,7 @@ class CalculadoraSimplex {
     this.iteraciones = 0;
     this.base = [];
     this.DOM = new ManipuladorDOM();
+    this.info = new InfoLog();
 
     this.matriz = [];
     this.resultado = {};
@@ -36,6 +37,7 @@ class CalculadoraSimplex {
   LimpiarDatos() {
     this.DOM.resultado.innerHTML = "";
     this.DOM.slidesManager.reset();
+    this.info.clearLog();
     this.iteraciones = 0;
     this.matriz = [];
     this.resultado = {};
@@ -70,17 +72,21 @@ class CalculadoraSimplex {
     this.objetivoEsMax = Boolean(this.DOM.obtenerObjetivo());
     if (Math.max(...this.comparadores) >= 0) this.usaMetodoM = true;
     if (!this.objetivoEsMax) this.coeficientesZ = Utils.invertirValoresDeArreglo(this.coeficientesZ);
+    this.info.log("El objetivo es " + (this.objetivoEsMax ? "maximizar" : "minimizar") + " Z");
+    this.info.log(this.usaMetodoM ? "Se debe usar el método de la M" : "Se puede resolver con Simplex estándar");
+    this.DOM.crearSlideInformativa("Consideraciones previas:", this.info.getLog());
   }
 
   formarMatriz() {
-    let info = [];
     for (let i = 0; i < this.coeficientesZ.length; i++) {
       this.cantCoeficientes++;
       this.incognitasZ.push("x" + this.cantCoeficientes);
     }
     // Extraccion de terminos independientes
     this.TI.push(...this.coeficientesL.map((r) => r.pop()));
+    this.info.newPage();
     this.agregarVariablesEspeciales();
+    this.DOM.crearSlideInformativa("Variables especiales:", this.info.getLog());
     this.base = [...this.baseOriginal];
 
     // Se iguala funcion Z a 0
@@ -91,10 +97,25 @@ class CalculadoraSimplex {
     if (this.usaMetodoM) this.coeficientesZ = Polinomio.CovertirEnArrayDePolinomios(this.coeficientesZ);
     this.completarFilas();
     this.matriz.push(this.coeficientesZ, ...this.coeficientesL);
+    this.info.newPage();
+    this.info.log("Función Z igualada a 0:");
+    this.info.log(this.obtenerFuncionZIgualadaACero());
+    this.mostrarEstadoActual("Primera tabla:", this.info.getLog());
+  }
 
-    info.push("El objetivo es " + (this.objetivoEsMax ? "maximizar" : "minimizar") + " Z");
-    info.push(this.usaMetodoM ? "Se debe usar el método de la M" : "Se puede resolver con Simplex estándar");
-    this.mostrarEstadoActual("Primera tabla:", info);
+  obtenerFuncionZIgualadaACero() {
+    let funcion = this.objetivoEsMax ? "Z" : "-Z";
+    for (let i = 0; i < this.incognitasZ.length; i++) {
+      let termino;
+      if (this.coeficientesZ[i] instanceof Polinomio) {
+        termino = " + (" + this.coeficientesZ[i].toString() + ")";
+      } else {
+        termino = (this.coeficientesZ[i] < 0 ? " - " : " + ") + Math.abs(this.coeficientesZ[i]);
+      }
+      funcion += termino + this.incognitasZ[i];
+    }
+    funcion += " = 0";
+    return funcion;
   }
 
   agregarVariablesEspeciales() {
@@ -104,27 +125,28 @@ class CalculadoraSimplex {
       switch (this.comparadores[i]) {
         case -1:
           // <= (Se agrega variable de holgura)
-          this.agregarNuevaVariable(i, "x", 0);
+          this.agregarNuevaVariable(i, "x", "de holgura", 0);
           break;
         case 0:
           // = (Se agrega variable artificial);
-          this.agregarNuevaVariable(i, "r", new Polinomio(0, -1));
+          this.agregarNuevaVariable(i, "r", "artificial", new Polinomio(0, -1));
           break;
         case 1:
           // >= (Se agrega variable de superavit y variable artificial)
-          this.agregarNuevaVariable(i, "s", 0);
+          this.agregarNuevaVariable(i, "s", "de exceso", 0);
           this.cantCoeficientes++;
-          this.agregarNuevaVariable(i, "r", new Polinomio(0, -1));
+          this.agregarNuevaVariable(i, "r", "artificial", new Polinomio(0, -1));
           break;
       }
     }
   }
 
-  agregarNuevaVariable(fila, nombre, coeficienteEnZ) {
+  agregarNuevaVariable(fila, nombre, tipo, coeficienteEnZ) {
     this.incognitasZ.push(nombre + this.cantCoeficientes);
     this.coeficientesL[fila][this.cantCoeficientes - 1] = nombre === "s" ? -1 : 1;
     this.coeficientesZ.push(coeficienteEnZ);
     if (nombre !== "s") this.baseOriginal.push(nombre + this.cantCoeficientes);
+    this.info.log(`- Se agrega variable ${tipo} "${nombre}${this.cantCoeficientes}" (${fila + 1}° limitación).`);
   }
 
   completarFilas() {
@@ -133,7 +155,10 @@ class CalculadoraSimplex {
       this.llenarFila(this.coeficientesL[i]);
       this.coeficientesL[i].push(this.TI[i + 1]);
       if (this.comparadores[i] < 0) continue;
+      this.info.newPage();
+      this.info.log("Se debe adecuar función objetivo debido a " + (i + 1) + "° limitación:");
       this.adecuarFuncionObjetivo(this.coeficientesL[i]);
+      this.DOM.crearSlideInformativa("Adecuación de función objetivo", this.info.getLog());
     }
   }
 
@@ -147,6 +172,8 @@ class CalculadoraSimplex {
   adecuarFuncionObjetivo(arr) {
     for (let i = 0; i <= this.incognitasZ.length; i++) {
       const M = new Polinomio(0, -1);
+      const valorInicial = this.coeficientesZ[i] instanceof Polinomio ? this.coeficientesZ[i].toString() : this.coeficientesZ[i];
+      let terminos = [valorInicial];
       const mult = M.Multiplicar(arr[i]);
       if (this.coeficientesZ[i] instanceof Polinomio) {
         this.coeficientesZ[i] = this.coeficientesZ[i].Sumar(mult);
@@ -155,6 +182,14 @@ class CalculadoraSimplex {
       } else {
         this.coeficientesZ[i] = this.coeficientesZ[i] + mult;
       }
+      terminos.push(arr[i], "-M", this.coeficientesZ[i])
+      terminos.map(t => {
+        if (t instanceof Polinomio) {
+          return t.toString();
+        }
+        return t;
+      });
+      this.info.log(`${terminos[1]} x (${terminos[2]}) + (${terminos[0]}) = ${terminos[3]}`);
     }
   }
 
@@ -187,11 +222,11 @@ class CalculadoraSimplex {
   }
 
   calcular() {
-    let info = [];
+    this.info.newPage();
     this.iteraciones++;
     const colVarEntrante = this.obtenerVariableEntrante();
     const filaVarSaliente = this.obtenerVariableSaliente(colVarEntrante);
-    info.push("Entra a la base " + this.incognitasZ[colVarEntrante] + " y sale " + this.base[filaVarSaliente]);
+    this.info.log(`Entra a la base ${this.incognitasZ[colVarEntrante]} y sale ${this.base[filaVarSaliente]}.`);
     this.base[filaVarSaliente] = this.incognitasZ[colVarEntrante];
     let nuevaMatriz = [...this.matriz];
     const valorBase = nuevaMatriz[filaVarSaliente][colVarEntrante];
@@ -227,16 +262,21 @@ class CalculadoraSimplex {
     if (this.obtenerVariableEntrante() != null) {
       nuevaMatriz = [];
       // Mostrar resultado parcial
-      this.mostrarEstadoActual("Iteracion " + this.iteraciones, info);
+      this.mostrarEstadoActual("Iteracion " + this.iteraciones, this.info.getLog());
       this.calcular();
     } else {
       for (let i = 0; i < this.matriz.length; i++) {
         let valor = this.matriz[i][longitudFila - 1];
         // Z se invierte si el objetivo es minimizar
-        if (i == 0 && !this.objetivoEsMax) valor *= -1;
+        if (i == 0 && !this.objetivoEsMax) {
+          valor *= -1;
+          this.info.log("Se debe invertir el valor de Z dado que el objetivo es minimizar.");
+        };
         this.resultado[this.base[i]] = valor;
       }
-      this.mostrarEstadoActual("Resultado final:", [...info, this.crearDescripcion(), "Iteraciones en total: " + this.iteraciones]);
+      this.info.log(this.crearDescripcion());
+      this.info.log("Iteraciones en total: " + this.iteraciones);
+      this.mostrarEstadoActual("Resultado final:", this.info.getLog());
     }
   }
 
@@ -245,6 +285,7 @@ class CalculadoraSimplex {
   }
 
   mostrarEstadoActual(titulo, info) {
+    if (!info) info = [];
     this.DOM.crearSlide(titulo, info, this.matriz, ["Base", ...this.incognitasZ, "T.I"], this.base);
   }
 
@@ -273,7 +314,7 @@ class CalculadoraSimplex {
     } else {
       if (!this.checkLimitaciones(limitaciones)) {
         valid = false;
-        error += "- Todos los campos de las limitaciones deben ser numericos.\n";
+        error += "- Todos los campos de las limitaciones deben ser numéricos.\n";
       }
     }
     if (error.length > 0) alert(error);

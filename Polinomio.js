@@ -47,6 +47,9 @@ class Polinomio {
 
   toString() {
     let signo = this.m > 0 ? "+" : "-";
+    if (this.m == 0) {
+      return +this.c.toFixed(2);
+    }
     return this.c != 0 ? `${+this.c.toFixed(2)} ${signo} ${Math.abs(+this.m.toFixed(2))}M` : `${+this.m.toFixed(2)}M`;
   }
 

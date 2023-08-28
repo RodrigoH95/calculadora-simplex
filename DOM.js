@@ -134,7 +134,25 @@ class ManipuladorDOM {
     box.append(h2, textBox, tabla);
     this.resultado.appendChild(box);
     this.slidesManager.addSlide(box);
+  }
 
+  crearSlideInformativa(titulo, info) {
+    const box = document.createElement("div");
+    box.classList.add("contenedor-tabla");
+    const h2 = document.createElement("h2");
+    h2.innerText = titulo;
+    const textBox = document.createElement("div");
+    textBox.classList.add("info", "textBox");
+    if (info.length > 0) {
+      for (let text of info) {
+        const p = document.createElement("p");
+        p.innerText = text;
+        textBox.appendChild(p);
+      }
+    }
+    box.append(h2, textBox);
+    this.resultado.appendChild(box);
+    this.slidesManager.addSlide(box);
   }
 
   obtenerLimitaciones() {

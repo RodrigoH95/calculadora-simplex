@@ -32,6 +32,10 @@ main {
   width: 50%;
 }
 
+#resultado {
+  width: 100%;
+}
+
 .form-group {
   margin: 0.2rem 0;
 }
@@ -137,7 +141,7 @@ h1, h2 {
 #btn-calculos {
   position: absolute;
   top: 20%;
-  left: 615px;
+  right: -25px;
   margin-left: -1.4rem;
 }
 
@@ -159,7 +163,7 @@ h1, h2 {
   }
 }
 
-@media screen and (max-width: 1080px) {
+@media screen and (max-width: 1050px) {
   main {
     flex-direction: column;
   }
@@ -168,5 +172,22 @@ h1, h2 {
     width: auto;
     margin: 0.5rem;
     padding: 0.5rem;
+  }
+
+  #resultado-contenedor {
+    width: auto;
+  }
+}
+
+@media screen and (max-width: 600px) {
+
+  #aux {
+    font-size: 11px;
+    max-width: 350px;
+    left: -350px;
+  }
+
+  #resultado {
+    overflow-x: auto;
   }
 }

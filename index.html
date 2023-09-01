@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -15,33 +15,34 @@
     </div>
   </div>
   <header>
-    <h1>Programación lineal. Método Simplex</h1>
+    <h1>Método Simplex</h1>
   </header>
   <main>
-    <form class="box">
-      <h2>Describa que representa cada variable:</h2>
-      <div class="form-group">
-        <label for="x1">Variable x<sub>1</sub>:</label>
-        <input class="input value" type="text" name="x1" id="x1" autocomplete="off">
-      </div>
-      <div class="form-group">
-        <label for="x2">Variable x<sub>2</sub>:</label>
-        <input class="input value" type="text" name="x2" id="x2" autocomplete="off">
-      </div>
+    <div class="box">
+      <h2>Variables <button id="btnAgregarVar" class="btn">+</button><button id="btnEliminarVar" class="btn">-</button></h2>
       <h2>Objetivo:</h2>
-      <select name="objetivo" id="objetivo" class="btn">
-        <option value="1">Max</option>
-        <option value="0">Min</option>
-      </select>
-      <span>Z =</span>
-      <input class="input value" type="text" name="valueX1" class="value" id="valueX1" value="1" autocomplete="off">
-      <span>x<sub>1</sub> + </span>
-      <input class="input value" type="text" name="valueX2" class="value" id="valueX2" value="1" autocomplete="off">
-      <span>x<sub>2</sub></span>
-      <h2>Limitaciones: <button id="btnAgregarLimit" class="btn">+</button> <button id="btnEliminarLimit" class="btn">-</button></h2>
+      <div>
+        <select name="objetivo" id="objetivo" class="btn">
+          <option value="1">Max</option>
+          <option value="0">Min</option>
+        </select>
+        <span>Z =</span>
+        <div id="varContainer">
+          <div class="var">
+            <input class="input value" type="text" name="valueX1" class="value" id="valueX1" value="1" autocomplete="off">
+            <span>x<sub>1</sub></span>
+          </div>
+          <div class="var">
+            <span> + </span>
+            <input class="input value" type="text" name="valueX2" class="value" id="valueX2" value="1" autocomplete="off">
+            <span>x<sub>2</sub></span>
+          </div>
+        </div>
+      </div>
+      <h2>Limitaciones: <button id="btnAgregarLimit" class="btn">+</button><button id="btnEliminarLimit" class="btn">-</button></h2>
       <div id="limitaciones"></div>
       <button id="btnCalcular" class="btn">Calcular</button>
-    </form>
+    </div>
     <div id="resultado-contenedor" class="box">
     <button id="btn-prev" class="btn btn-slide"><<</button>
     <div id="resultado"><h2>Resultado:</h2></div>
@@ -50,6 +51,11 @@
     </div>
     </div>
   </main>
+  <footer>
+    <p>Rodrigo Heredia 2023 | </p>
+    <a href="https://github.com/RodrigoH95" class="nav-link">Github</a>
+    <a href="mailto:rheredia95@hotmail.com" class="nav-link">Correo</a>
+  </footer>
   <script src="./scripts/Polinomio.js"></script>
   <script src="./scripts/utils.js"></script>
   <script src="./scripts/slides.js"></script>

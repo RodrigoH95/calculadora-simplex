@@ -23,8 +23,24 @@ class CalculadoraSimplex {
   start() {
     this.DOM.start();
 
-    this.DOM.btnCalcular.addEventListener("click", (e) => {
-      e.preventDefault();
+    this.DOM.btnAgregarVar.addEventListener("click", () => {
+      this.DOM.limpiarLimitaciones();
+      this.nroVariables++;
+      this.DOM.crearVar(this.nroVariables);
+    });
+
+    this.DOM.btnAgregarLimit.addEventListener("click", () => {
+      this.DOM.crearInputBox(this.nroVariables);
+    });
+
+    this.DOM.btnEliminarVar.addEventListener("click", () => {
+      if (this.DOM.varContainer.childElementCount <= 2) return;
+      this.DOM.limpiarLimitaciones();
+      this.nroVariables--;
+      this.DOM.borrarVar();
+    });
+
+    this.DOM.btnCalcular.addEventListener("click", () => {
       if (!this.validarDatos()) return;
       this.LimpiarDatos();
       this.prepararDatos();
@@ -58,8 +74,10 @@ class CalculadoraSimplex {
 
   prepararDatos() {
     // Obtencion de valores de coeficientes en funcion Z
-    this.coeficientesZ.push(this.DOM.getValor("X1"));
-    this.coeficientesZ.push(this.DOM.getValor("X2"));
+    for (let i = 1; i <= this.nroVariables; i++) {
+      this.coeficientesZ.push(this.DOM.getValor("X" + i));
+    }
+    
 
     // Seteo de base y termino independiente para funcion Z
     this.baseOriginal.push("Z");
@@ -77,7 +95,7 @@ class CalculadoraSimplex {
     if (Math.max(...this.comparadores) >= 0) this.usaMetodoM = true;
     if (!this.objetivoEsMax) this.coeficientesZ = Utils.invertirValoresDeArreglo(this.coeficientesZ);
     this.info.log("El objetivo es " + (this.objetivoEsMax ? "maximizar" : "minimizar") + " Z");
-    this.info.log(this.usaMetodoM ? "Se debe usar el método de la M" : "Se puede resolver con Simplex estándar");
+    this.info.log(this.usaMetodoM ? "Se debe usar el método de la M (No todas las limitaciones son '<=')" : "Se puede resolver con Simplex estándar (Todas las limitaciones son '<=')");
     this.mostrarInfo("Consideraciones previas:", this.info.getLog());
   }
 
@@ -86,10 +104,21 @@ class CalculadoraSimplex {
       this.cantCoeficientes++;
       this.incognitasZ.push("x" + this.cantCoeficientes);
     }
+    // Se muestra funcion Z dependiendo de si el obj es Max o Min (antes de alterarla)
+    let cadena = this.objetivoEsMax ? "Z = " : "- Z = ";    
+    for (let i = 0; i < this.coeficientesZ.length; i++) {
+      const signo = this.coeficientesZ[i] < 0 ? " - " : " + ";
+      const valor = Math.abs(this.coeficientesZ[i]);
+      cadena += `${signo} ${valor}${this.incognitasZ[i]}`;
+    }
+    this.info.log("Función Z:");
+    this.info.log(cadena);
+    this.info.log("--------------------------------------");
+    this.info.log("Variables:");
     // Extraccion de terminos independientes
     this.TI.push(...this.coeficientesL.map((r) => r.pop()));
     this.agregarVariablesEspeciales();
-    this.mostrarInfo("Variables especiales:", this.info.getLog());
+    this.mostrarInfo("Situación inicial:", this.info.getLog());
     this.base = [...this.baseOriginal];
 
     // Se iguala funcion Z a 0
@@ -100,9 +129,9 @@ class CalculadoraSimplex {
     if (this.usaMetodoM) this.coeficientesZ = Polinomio.CovertirEnArrayDePolinomios(this.coeficientesZ);
     this.completarFilas();
     this.matriz.push(this.coeficientesZ, ...this.coeficientesL);
-    this.info.log("Función Z:");
+    this.info.log("Función Z igualada a 0:");
     this.info.log(this.obtenerFuncionZIgualadaACero());
-    this.mostrarEstadoActual("Tabla inicial:", this.info.getLog());
+    this.mostrarEstadoActual("Primera tabla:", this.info.getLog());
   }
 
   obtenerFuncionZIgualadaACero() {
@@ -133,13 +162,13 @@ class CalculadoraSimplex {
           break;
         case 0:
           // = (Se agrega variable artificial);
-          this.agregarNuevaVariable(i, "r", "artificial", new Polinomio(0, -1));
+          this.agregarNuevaVariable(i, "R", "artificial", new Polinomio(0, -1));
           break;
         case 1:
           // >= (Se agrega variable de superavit y variable artificial)
           this.agregarNuevaVariable(i, "s", "de exceso", 0);
           this.cantCoeficientes++;
-          this.agregarNuevaVariable(i, "r", "artificial", new Polinomio(0, -1));
+          this.agregarNuevaVariable(i, "R", "artificial", new Polinomio(0, -1));
           break;
       }
     }
@@ -150,7 +179,7 @@ class CalculadoraSimplex {
     this.coeficientesL[fila][this.cantCoeficientes - 1] = nombre === "s" ? -1 : 1;
     this.coeficientesZ.push(coeficienteEnZ);
     if (nombre !== "s") this.baseOriginal.push(nombre + this.cantCoeficientes);
-    this.info.log(`- Se agrega variable ${tipo} "${nombre}${this.cantCoeficientes}" (${fila + 1}° limitación).`);
+    this.info.log(`# Se agrega variable ${tipo} "${nombre}${this.cantCoeficientes}" (${fila + 1}° limitación).`);
   }
 
   completarFilas() {
@@ -236,7 +265,8 @@ class CalculadoraSimplex {
       const divisor = this.matriz[fila][posVarEntrante];
       if (divisor <= 0) continue;
       const cociente = terminoInd / divisor;
-      if (cociente < menor) {
+      // Si hay empate se prefiere dar salida a variable artificial
+      if (cociente < menor || (cociente == menor && this.base[fila].includes("R"))) {
         menor = cociente;
         indice = fila;
       }
@@ -325,21 +355,28 @@ class CalculadoraSimplex {
   }
 
   crearDescripcion() {
-    const { x1, x2, Z } = this.resultado;
-    const nombreX1 = this.DOM.nombreX1.value || "x1";
-    const nombreX2 = this.DOM.nombreX2.value || "x2";
-    return `Con ${Utils.redondearNum(x1)} ${nombreX1} y ${Utils.redondearNum(x2)} ${nombreX2} se obtuvo un Z de ${Utils.redondearNum(Z)}`;
+    let cadena = "Con ";
+    for (let i = 0; i < this.nroVariables; i++) {
+      const valor = this.resultado["x" + (i + 1)];
+      if (valor && valor != 0) {
+        cadena += Utils.redondearNum(valor) + " x" + (i + 1) + ", ";
+      }
+    }
+    cadena += "se obtuvo un Z de " + Utils.redondearNum(this.resultado["Z"]);
+    return cadena;
   }
 
   validarDatos() {
     let valid = true;
-    const x1 = this.DOM.getValor("X1");
-    const x2 = this.DOM.getValor("X2");
     let error = "";
 
-    if (!(x1 && x2 && Number(Number(x1) + Number(x2)))) {
-      error += "- Valores en función Z deben ser numéricos.\n";
-      valid = false;
+    for (let i = 0 ; i < this.nroVariables; i++) {
+      const varN = this.DOM.getValor("X" + (i + 1));
+      if (!(varN && Number(varN))) {
+        error += "- Valores en función Z deben ser numéricos.\n";
+        valid = false;
+        break;
+      }
     }
     const limitaciones = this.DOM.obtenerLimitaciones();
 

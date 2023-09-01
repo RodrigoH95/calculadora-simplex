@@ -4,14 +4,15 @@ class ManipuladorDOM {
     this.limitacionesContainer = document.getElementById("limitaciones");
     this.contenedorLateral = document.getElementById("aux");
     this.calculosContainer = document.getElementById("calculos");
+    this.varContainer = document.getElementById("varContainer");
+    this.btnAgregarVar = document.getElementById("btnAgregarVar");
+    this.btnEliminarVar = document.getElementById("btnEliminarVar");
     this.btnAgregarLimit = document.getElementById("btnAgregarLimit");
     this.btnEliminarLimit = document.getElementById("btnEliminarLimit");
     this.btnCalcular = document.getElementById("btnCalcular");
     this.btnCalculos = document.getElementById("btn-calculos");
-    this.nombreX1 = document.getElementById("x1");
-    this.nombreX2 = document.getElementById("x2");
-    this.valueX1 = document.getElementById("valueX1");
-    this.valueX2 = document.getElementById("valueX2");
+    // this.valueX1 = document.getElementById("valueX1");
+    // this.valueX2 = document.getElementById("valueX2");
     this.root = document.getElementById("resultado");
     this.inputs = document.getElementsByClassName("input");
     this.slidesManager = new SlideManager();
@@ -21,10 +22,10 @@ class ManipuladorDOM {
     this.slidesManager.start();
     Array.from(this.inputs).forEach(input => { input.oninput = e => this.autoAdjustInput(e)});
 
-    this.btnAgregarLimit.addEventListener("click", (e) => {
-      e.preventDefault();
-      this.crearInputBox();
-    });
+    // this.btnAgregarLimit.addEventListener("click", (e) => {
+    //   e.preventDefault();
+    //   this.crearInputBox();
+    // });
 
     this.btnEliminarLimit.addEventListener("click", (e) => {
       e.preventDefault();
@@ -43,34 +44,72 @@ class ManipuladorDOM {
     this.slidesManager.reset();
   }
 
-  getValor(nombre) {
-    // Nombre puede ser X1 o X2
-    return Utils.procesarNumero(this["value" + nombre].value);
+  limpiarLimitaciones() {
+    this.limitacionesContainer.innerHTML = "";
   }
 
-  crearInputBox() {
-    const box = this.crearInputGroup();
+  getValor(nombre) {
+    // Nombre puede ser X1 o X2
+    const elem = document.getElementById("value" + nombre);
+    const valor = elem.value
+    return Utils.procesarNumero(valor);
+  }
+
+  crearVar(num) {
+      const box = document.createElement("div");
+      box.classList.add("var");
+      const span1 = document.createElement("span");
+      const input = document.createElement("input");
+      const span2 = document.createElement("span");
+      const sub = document.createElement("sub");
+      // Propiedades del input
+      input.classList.add("input", "value");
+      const nombre = "valueX" + num;
+      input.name = nombre;
+      input.id = nombre;
+      input.value = "1";
+      input.autocomplete = "off";
+
+      span1.innerText = " + ";
+      span2.innerText = "x";
+      sub.innerText = num;
+
+      span2.appendChild(sub);
+      box.append(span1, input, span2);
+
+      this.varContainer.appendChild(box);
+  }
+
+  borrarVar() {
+    this.varContainer.removeChild(this.varContainer.lastChild);
+  }
+
+  crearInputBox(cantVariables) {
+    const box = this.crearInputGroup(cantVariables);
     this.limitacionesContainer.appendChild(box);
   }
 
-  crearInput(nombreId = "") {
+  crearInput() {
     const input = document.createElement("input");
     input.classList.add("limit-value", "value");
-    if (nombreId) input.id = nombreId;
     input.oninput = (e) => this.autoAdjustInput(e);
     return input;
   }
 
-  crearInputGroup() {
+  crearInputGroup(cantVariables) {
     const box = document.createElement("div");
     box.classList.add("limite");
+    for (let i = 0; i < cantVariables - 1; i++) {
+      const input = this.crearInput();
+      const text = this.crearTexto(`x${i + 1} + `);
+      box.append(input, text);
+    }
+    // A la ultima variable no se le coloca + a la derecha
     const input = this.crearInput();
-    const text = this.crearTexto("x1 + ");
-    const input2 = this.crearInput();
-    const text2 = this.crearTexto("x2");
+    const text = this.crearTexto(`x${cantVariables}`);
     const dropDown = this.crearSelectorComparadores();
-    const input3 = this.crearInput();
-    box.append(input, text, input2, text2, dropDown, input3);
+    const TI = this.crearInput();
+    box.append(input, text, dropDown, TI);
     return box;
   }
 
